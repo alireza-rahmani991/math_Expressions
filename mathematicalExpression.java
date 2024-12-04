@@ -1,10 +1,10 @@
 import java.util.Stack;
 import java.util.Scanner;
+import java.lang.Math;
 
 
 public class mathematicalExpression {
-    // private Stack<String> expression = new Stack<>();
-    private String expression = "";
+    private Stack<String> expression = new Stack<>();
 
     mathematicalExpression(){
         Scanner scanner = new Scanner(System.in);
@@ -22,23 +22,7 @@ public class mathematicalExpression {
         boolean prevIsDigit = false;
         while(!input.equals("END")){
             if((input.matches("-?\\d+") && !prevIsDigit )|| (input.matches("[+\\-^*/]") && prevIsDigit) || (input.equals("x") && !prevIsDigit )){
-
-                if(!prevIsDigit && !input.equals("x")){
-                    int num = Integer.parseInt(input);
-                    if(num < 0){
-                        // expression.push("!");
-                        expression += "!";       
-                    }
-                }
-
-                if (input.startsWith("-") && !prevIsDigit) {
-                    // expression.push(input.substring(1)); 
-                    expression += input.substring(1);
-                }
-                else{
-                    // expression.push(input);
-                    expression += input;
-                }
+                expression.push(input);
                 
                 System.out.println("enter the next element or END to exit");
                 prevIsDigit = !prevIsDigit;
@@ -46,14 +30,15 @@ public class mathematicalExpression {
             }
             
             else if(input.equals("(")){
-                expression += input;
+                expression.push(input);
                 openParenthesesCount++;
                 System.out.println("enter the next element or END to exit");
             }
 
             else if(input.equals(")")){
                 if(openParenthesesCount > 0){
-                    expression += input;
+                    
+                    expression.push(input);
                     openParenthesesCount--;
                 }
                 else{
@@ -78,101 +63,235 @@ public class mathematicalExpression {
 
         if(!prevIsDigit){
             System.out.println("there was no operand after the last operator so it was removed");
-            expression = expression.substring(0, expression.length() - 1); 
+            
+            expression.pop();
         }
 
         if(openParenthesesCount > 0){
             for(int i = 0; i < openParenthesesCount; i++){
-                expression += ")";
+                
+                expression.push(")");
             }
         }
         System.out.println("the expression is: " + expression);
-        // printStack();
+        
 
     }
 
-    public String toPostFix(){
-        String res = "";
-        Stack<Character> operators = new Stack<>();
-
-        for (int i = 0; i < expression.length(); i++) {
-            char element = expression.charAt(i);
-
-            if ((element >= '0' && element <= '9') || element == '!'  || element == 'x')
-            {
-                res += element;
-            }
-
-            else if (element == '(')
-                operators.push('(');
-
+    public Stack<String> toPostFix() {
+        Stack<String> postfixStack = new Stack<>();
+        Stack<String> operatorStack = new Stack<>();
+    
         
-            else if (element == ')') {
-                while (!operators.isEmpty() && operators.peek() != '(') {
-                    res += operators.pop();
+        Stack<String> expressionCopy = new Stack<>();
+        expressionCopy.addAll(expression);
+    
+        while (!expressionCopy.isEmpty()) {
+            String token = expressionCopy.remove(0); 
+            if (token.matches("-?\\d+|^x$")) {
+                postfixStack.push(token);
+            } else if (token.equals("(")) {
+                operatorStack.push(token);
+            } else if (token.equals(")")) {
+                while (!operatorStack.isEmpty() && !operatorStack.peek().equals("(")) {
+                    postfixStack.push(operatorStack.pop());
                 }
-                if (!operators.isEmpty() && operators.peek() == '(') {
-                    operators.pop(); 
+                operatorStack.pop(); 
+            } else { 
+                while (!operatorStack.isEmpty() && prec(token) <= prec(operatorStack.peek())) {
+                    postfixStack.push(operatorStack.pop());
                 }
+                operatorStack.push(token);
             }
-
-        
-            else {
-                while (!operators.isEmpty() && (prec(element) < prec(operators.peek()) || prec(element) == prec(operators.peek()))) {
-                    res += operators.pop();
-                }
-                operators.push(element);
-            }
-        }
-        while (!operators.isEmpty()) {
-            res += operators.pop();
         }
     
-    return res;
+        while (!operatorStack.isEmpty()) {
+            postfixStack.push(operatorStack.pop());
+        }
+    
+        return postfixStack;
     }
 
-    public String toPreFix(){
-        String temp = expression;
-        StringBuilder reversed = new StringBuilder();
-        for (int i = expression.length() - 1; i >= 0; i--) {
-            char ch = expression.charAt(i);
-            if (ch == '(') {
-                reversed.append(')');
-            } else if (ch == ')') {
-                reversed.append('(');
-            } else {
-                reversed.append(ch);
+
+    public Stack<String> toPreFix() {
+        Stack<String> operatorStack = new Stack<>();
+        Stack<String> operandStack = new Stack<>();
+    
+        
+        Stack<String> expressionCopy = new Stack<>();
+        expressionCopy.addAll(expression);
+    
+        while (!expressionCopy.isEmpty()) {
+            String token = expressionCopy.pop();
+    
+            if (token.matches("-?\\d+|^x$")) {
+                operandStack.push(token);
+            } else if (token.equals(")")) { 
+                operatorStack.push(token);
+            } else if (token.equals("(")) { 
+                while (!operatorStack.isEmpty() && !operatorStack.peek().equals(")")) {
+                    String operator = operatorStack.pop();
+                    String operand1 = operandStack.pop();
+                    String operand2 = operandStack.pop();
+                    String prefix = operator + " " + operand1 + " " + operand2;
+                    operandStack.push(prefix);
+                }
+                operatorStack.pop(); 
+            } else { 
+                while (!operatorStack.isEmpty() && prec(token) < prec(operatorStack.peek())) {
+                    String operator = operatorStack.pop();
+                    String operand1 = operandStack.pop();
+                    String operand2 = operandStack.pop();
+                    String prefix = operator + " " + operand1 + " " + operand2;
+                    operandStack.push(prefix);
+                }
+                operatorStack.push(token);
             }
         }
-        expression = reversed.toString();
+    
+        while (!operatorStack.isEmpty()) {
+            String operator = operatorStack.pop();
+            String operand1 = operandStack.pop();
+            String operand2 = operandStack.pop();
+            String prefix = operator + " " + operand1 + " " + operand2;
+            operandStack.push(prefix);
+        }
+    
+        Stack<String> resultStack = new Stack<>();
+    for (String item : operandStack.pop().split(" ")) {
+        resultStack.push(item);
+    }
 
-        String postfix = toPostFix();
-        String prefix = new StringBuilder(postfix).reverse().toString();
-        expression = temp;
-        return prefix;
+    return resultStack;
         
     }
 
-    // public int calculate(){
 
-    // }
+    public double calculate(){
+        Stack<String> postfix = toPreFix();
+        Stack<Double> operands = new Stack<>();
+        while (!postfix.empty()){
+            String token = postfix.pop();
+            if (token.matches(("-?\\d+(\\.\\d+)?"))){
+                operands.push(Double.parseDouble(token));
+            }
+            else if (token.matches("[+\\-*/^]")) {
+                double operand1 = operands.pop();
+                double operand2 = operands.pop();
+                switch (token) {    
+                    case "+":
+                        operands.push(operand1 + operand2);
+                        break;
+                    case "-":
+                        operands.push(operand1 - operand2);
+                        break;
+                    case "*":
+                        operands.push(operand1 * operand2);
+                        break;
+                    case "/":
+                        operands.push((double)operand1 / operand2);
+                        break;
+                    case "^":
+                        operands.push(Math.pow(operand1, operand2));
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        return operands.pop();
+    }
 
-    int prec(char c) {
-        if (c == '^')
+
+    public double calculate(double value){
+        Stack<String> postfix = toPreFix();
+        Stack<Double> operands = new Stack<>();
+        while (!postfix.empty()){
+            String token = postfix.pop();
+            if (token.matches(("-?\\d+(\\.\\d+)?"))){
+                
+                operands.push(Double.parseDouble(token));
+            }
+            else if(token.equals("x")){
+                operands.push(value);
+            }
+            else if (token.matches("[+\\-*/^]")) {
+                double operand1 = operands.pop();
+                double operand2 = operands.pop();
+                switch (token) {    
+                    case "+":
+                        operands.push(operand1 + operand2);
+                        break;
+                    case "-":
+                        operands.push(operand1 - operand2);
+                        break;
+                    case "*":
+                        operands.push(operand1 * operand2);
+                        break;
+                    case "/":
+                        operands.push((double)operand1 / operand2);
+                        break;
+                    case "^":
+                        operands.push(Math.pow(operand1, operand2));
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        return operands.pop();
+    }
+
+
+    public double calculatePostfix(){
+        Stack<String> postfix = toPostFix();
+        Stack<Double> operands = new Stack<>();
+        while (!postfix.empty()){
+            String token = postfix.remove(0);
+            if (token.matches(("-?\\d+(\\.\\d+)?"))){
+                operands.push(Double.parseDouble(token));
+            }
+            else if (token.matches("[+\\-*/^]")) {
+                double operand1 = operands.pop();
+                double operand2 = operands.pop();
+                switch (token) {    
+                    case "+":
+                        operands.push(operand1 + operand2);
+                        break;
+                    case "-":
+                        operands.push(operand2 - operand1);
+                        break;
+                    case "*":
+                        operands.push(operand1 * operand2);
+                        break;
+                    case "/":
+                        operands.push((double)operand2 / operand1);
+                        break;
+                    case "^":
+                        operands.push(Math.pow(operand2, operand1));
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        return operands.pop();
+    }
+
+    
+
+    int prec(String c) {
+        if (c.equals("^"))
             return 3;
-        else if (c == '/' || c == '*')
+        else if (c.equals("/") || c.equals( "*"))
             return 2;
-        else if (c == '+' || c == '-')
+        else if (c.equals("+") || c.equals("-"))
             return 1;
         else
             return -1;
     }
 
-    // public void printStack() {
-    //     for (String item : expression) {
-    //         System.out.print(item);
-    //     }
-    // }
+    
 }
 
 
@@ -182,5 +301,8 @@ class main{
         mathematicalExpression a = new mathematicalExpression();
         System.out.println(a.toPostFix());
         System.out.println(a.toPreFix());
+        // System.out.println(a.calculatePostfix());
+        System.out.println(a.calculate(3));
+        
     }
 }
