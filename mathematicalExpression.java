@@ -1,7 +1,8 @@
 import java.util.Stack;
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.lang.Math;
-
+import java.awt.Point;
 
 public class mathematicalExpression {
     private Stack<String> expression = new Stack<>();
@@ -278,6 +279,16 @@ public class mathematicalExpression {
         return operands.pop();
     }
 
+    void graph(){
+        ArrayList<ArrayList<Double>> points = new ArrayList<>();
+        for(double i = -50; i <= 50; i = i + 0.1){
+            ArrayList<Double> temp = new ArrayList<>();
+            temp.add(i);
+            temp.add(calculate(i));
+            points.add(temp);
+        }
+        draw d = new draw(points);
+    }
     
 
     int prec(String c) {
@@ -299,10 +310,12 @@ class main{
     public static void main(String[] args){
 
         mathematicalExpression a = new mathematicalExpression();
-        System.out.println(a.toPostFix());
-        System.out.println(a.toPreFix());
+        // System.out.println(a.toPostFix());
+        // System.out.println(a.toPreFix());
         // System.out.println(a.calculatePostfix());
-        System.out.println(a.calculate(3));
+        // System.out.println(a.calculate(3));
+        a.graph();
         
+        // draw.paint();
     }
 }
