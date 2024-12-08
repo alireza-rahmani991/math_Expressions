@@ -2,10 +2,11 @@ import java.util.Stack;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.lang.Math;
-import java.awt.Point;
 
 public class mathematicalExpression {
     private Stack<String> expression = new Stack<>();
+    private double precision = 0.1;
+    private boolean hasVariable = false;
 
     mathematicalExpression(){
         Scanner scanner = new Scanner(System.in);
@@ -27,12 +28,19 @@ public class mathematicalExpression {
                 
                 System.out.println("enter the next element or END to exit");
                 prevIsDigit = !prevIsDigit;
+                if(input.equals("x")){
+                    hasVariable = true;
+                }
 
             }
             
             else if(input.equals("(")){
+                if(prevIsDigit){
+                    expression.push("*");
+                }
                 expression.push(input);
                 openParenthesesCount++;
+                prevIsDigit = false;
                 System.out.println("enter the next element or END to exit");
             }
 
@@ -74,7 +82,6 @@ public class mathematicalExpression {
                 expression.push(")");
             }
         }
-        System.out.println("the expression is: " + expression);
         
 
     }
@@ -169,10 +176,10 @@ public class mathematicalExpression {
 
 
     public double calculate(){
-        Stack<String> postfix = toPreFix();
+        Stack<String> prefix = toPreFix();
         Stack<Double> operands = new Stack<>();
-        while (!postfix.empty()){
-            String token = postfix.pop();
+        while (!prefix.empty()){
+            String token = prefix.pop();
             if (token.matches(("-?\\d+(\\.\\d+)?"))){
                 operands.push(Double.parseDouble(token));
             }
@@ -205,10 +212,10 @@ public class mathematicalExpression {
 
 
     public double calculate(double value){
-        Stack<String> postfix = toPreFix();
+        Stack<String> prefix = toPreFix();
         Stack<Double> operands = new Stack<>();
-        while (!postfix.empty()){
-            String token = postfix.pop();
+        while (!prefix.empty()){
+            String token = prefix.pop();
             if (token.matches(("-?\\d+(\\.\\d+)?"))){
                 
                 operands.push(Double.parseDouble(token));
@@ -281,7 +288,7 @@ public class mathematicalExpression {
 
     void graph(){
         ArrayList<ArrayList<Double>> points = new ArrayList<>();
-        for(double i = -50; i <= 50; i = i + 0.1){
+        for(double i = -50; i <= 50; i = i + precision){
             ArrayList<Double> temp = new ArrayList<>();
             temp.add(i);
             temp.add(calculate(i));
@@ -302,20 +309,12 @@ public class mathematicalExpression {
             return -1;
     }
 
-    
-}
-
-
-class main{
-    public static void main(String[] args){
-
-        mathematicalExpression a = new mathematicalExpression();
-        // System.out.println(a.toPostFix());
-        // System.out.println(a.toPreFix());
-        // System.out.println(a.calculatePostfix());
-        // System.out.println(a.calculate(3));
-        a.graph();
-        
-        // draw.paint();
+    public boolean getHasVariable(){
+        return hasVariable;
     }
+
+    public Stack<String> getExpression(){
+        return expression;
+    }
+
 }

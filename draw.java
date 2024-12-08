@@ -7,6 +7,10 @@ import java.util.ArrayList;
 public class draw extends JFrame {
     ArrayList<ArrayList<Double>> points;
     private double scale = 20.0;
+    private int offsetX = 0;
+    private int offsetY = 0;
+    private int dragStartX = 0;
+    private int dragStartY = 0;
 
     public draw(ArrayList<ArrayList<Double>> points) {    
         this.points = points;
@@ -41,11 +45,30 @@ public class draw extends JFrame {
                 repaint();
             }
         });
+        drawingPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                dragStartX = e.getX();
+                dragStartY = e.getY();
+            }
+        });
+        drawingPanel.addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                int deltaX = e.getX() - dragStartX;
+                int deltaY = e.getY() - dragStartY;
+                offsetX += deltaX;
+                offsetY += deltaY;
+                dragStartX = e.getX();
+                dragStartY = e.getY();
+                repaint();
+            }
+        });
     }
 
     private void drawPlot(Graphics g) {
-        int originX = getWidth() / 2;
-        int originY = getHeight() / 2;
+        int originX = getWidth() / 2 + offsetX;
+        int originY = getHeight() / 2 + offsetY;
 
         Graphics2D g2d = (Graphics2D) g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
